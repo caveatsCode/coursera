@@ -321,7 +321,8 @@ def download_lectures(downloader,
                       combined_section_lectures_nums=False,
                       hooks=None,
                       playlist=False,
-                      intact_fnames=False
+                      intact_fnames=False,
+                      plex=False
                       ):
     """
     Downloads lecture resources described by sections.
@@ -340,10 +341,14 @@ def download_lectures(downloader,
             title = '_' + title
         return '%02d_%s%s.%s' % (num, name, title, fmt)
 
-    def format_combine_number_resource(secnum, lecnum, lecname, title, fmt):
+    def format_combine_number_resource(secnum, lecnum, lecname, title, fmt, plex):
         if title:
             title = '_' + title
-        return '%02d_%02d_%s%s.%s' % (secnum, lecnum, lecname, title, fmt)
+        if plex:
+            output = 's%02de%02d-%s%s.%s' % (secnum, lecnum, lecname, title, fmt)
+        else:
+            output  = '%02d_%02d_%s%s.%s' % (secnum, lecnum, lecname, title, fmt)
+        return output
 
     for (secnum, (section, lectures)) in enumerate(sections):
         if section_filter and not re.search(section_filter, section):
@@ -378,11 +383,11 @@ def download_lectures(downloader,
 
             # write lecture resources
             for fmt, url, title in resources_to_get:
-                if combined_section_lectures_nums:
+                if combined_section_lectures_nums or plex:
                     lecfn = os.path.join(
                         sec,
                         format_combine_number_resource(
-                            secnum + 1, lecnum + 1, lecname, title, fmt))
+                            secnum + 1, lecnum + 1, lecname, title, fmt, plex))
                 else:
                     lecfn = os.path.join(
                         sec, format_resource(lecnum + 1, lecname, title, fmt))
@@ -656,7 +661,13 @@ def parseArgs():
                         action='store_true',
                         default=False,
                         help='Do not limit filenames to be ASCII-only')
-
+    #added to support plex media server
+    parser.add_argument('--plex',
+                        dest='plex',
+                        action='store_true',
+                        default=False,
+                        help='Numbers filenames like s01e01 for easy use in Plex Media Server')
+                        
     args = parser.parse_args()
 
     # Initialize the logging system first so that other functions
@@ -746,7 +757,8 @@ def download_class(args, class_name):
         args.combined_section_lectures_nums,
         args.hooks,
         args.playlist,
-        args.intact_fnames)
+        args.intact_fnames,
+        args.plex)
 
     return completed
 
